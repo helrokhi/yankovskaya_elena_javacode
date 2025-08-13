@@ -2,69 +2,125 @@ package ru.pro;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
+import java.util.stream.Stream;
+
+import static java.util.stream.Stream.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class UndoableStringBuilderTest {
-
     private UndoableStringBuilder usb;
 
     @BeforeEach
-    void init() {
+    void setUp() {
         usb = new UndoableStringBuilder();
     }
 
-    @Test
-    @DisplayName("Проверка append и undo")
-    void testAppendAndUndo() {
-        usb.snapshot();
-        usb.getSb().append("Hello");
+    @Nested
+    @DisplayName("Тесты метода append()")
+    class AppendTests {
+        @ParameterizedTest(name = "append(\"{0}\") добавляет строку")
+        @ValueSource(strings = {"abc", "123", "Тест"})
+        void testAppend(String input) {
+            usb.append(input);
+            assertEquals(input, usb.getSb().toString());
+        }
 
-        assertAll("Проверка состояния после append и undo",
-                () -> assertEquals("Hello", usb.getSb().toString(), "После append должно быть 'Hello'"),
-
-                () -> {
-                    usb.undo();
-                    assertEquals("", usb.getSb().toString(), "После undo должно быть пустое значение");
-                }
-        );
+        @Test
+        @DisplayName("append() можно вызывать цепочкой")
+        void testAppendChaining() {
+            usb.append("abc").append("123");
+            assertEquals("abc123", usb.getSb().toString());
+        }
     }
 
-    @Test
-    @DisplayName("Проверка метода toString() сгенерированного Lombok")
-    void testToStringGeneratedByLombok() {
-        usb.getSb().append("Test");
-        String toStringResult = usb.toString();
+    @Nested
+    @DisplayName("Тесты метода insert()")
+    class InsertTests {
+        static Stream<Arguments> insertCases() {
+            return of(
+                    Arguments.of("abc", 0, "X", "Xabc"),
+                    Arguments.of("abc", 1, "-", "a-bc"),
+                    Arguments.of("abc", 3, "!", "abc!")
+            );
+        }
 
-        assertAll("Проверка toString содержит 'Test'",
-                () -> assertNotNull(toStringResult, "toString не должен быть null"),
-                () -> assertTrue(toStringResult.contains("Test"), "toString должен содержать 'Test'")
-        );
+        @ParameterizedTest(name = "insert в \"{0}\" на позицию {1} со строкой \"{2}\"")
+        @MethodSource("insertCases")
+        void testInsert(String base, int pos, String insert, String expected) {
+            usb.append(base).insert(pos, insert);
+            assertEquals(expected, usb.getSb().toString());
+        }
     }
 
-    @Test
-    @DisplayName("Проверка инициализации полей через Lombok")
-    void testConstructorGeneratedByLombok() {
-        assertAll("Проверка полей",
-                () -> assertNotNull(usb.getSb(), "StringBuilder должен быть инициализирован"),
-                () -> assertNotNull(usb.getHistory(), "История должна быть инициализирована")
-        );
+    @Nested
+    @DisplayName("Тесты метода delete()")
+    class DeleteTests {
+        @Test
+        void testDeleteRange() {
+            usb.append("abcdef").delete(2, 4);
+            assertEquals("abef", usb.getSb().toString());
+        }
+
+        @Test
+        void testDeleteInvalidRangeThrows() {
+            usb.append("abc");
+            assertThrows(StringIndexOutOfBoundsException.class, () -> usb.delete(5, 10));
+        }
     }
 
-    @ParameterizedTest(name = "append(\"{0}\") корректно обновляет строку")
-    @ValueSource(strings = {"abc", "123", "Тест"})
-    @DisplayName("Параметризованный тест append")
-    void testAppendMultipleValues(String input) {
-        usb.snapshot();
-        usb.getSb().append(input);
-        assertEquals(input, usb.getSb().toString());
+    @Nested
+    @DisplayName("Тесты undo/redo")
+    class UndoRedoTests {
+        @Test
+        void testUndoRestoresPreviousState() {
+            usb.append("abc").append("123");
+            usb.undo();
+            assertEquals("abc", usb.getSb().toString());
+        }
+
+        @Test
+        void testRedoRestoresAfterUndo() {
+            usb.append("abc").append("123");
+            usb.undo();
+            usb.redo();
+            assertEquals("abc123", usb.getSb().toString());
+        }
+
+        @Test
+        void testUndoWithoutHistoryDoesNothing() {
+            usb.undo();
+            assertEquals("", usb.getSb().toString());
+        }
+
+        @Test
+        void testRedoWithoutHistoryDoesNothing() {
+            usb.redo();
+            assertEquals("", usb.getSb().toString());
+        }
+    }
+
+    @Nested
+    @DisplayName("Тесты метода replace()")
+    class ReplaceTests {
+        @Test
+        void testReplaceRange() {
+            usb.append("abcdef").replace(2, 5, "XYZ");
+            assertEquals("abXYZf", usb.getSb().toString());
+        }
+
+        @Test
+        void testReplaceInvalidRangeThrows() {
+            usb.append("abc");
+            assertThrows(StringIndexOutOfBoundsException.class,
+                    () -> usb.replace(5, 10, "X"));
+        }
     }
 }
