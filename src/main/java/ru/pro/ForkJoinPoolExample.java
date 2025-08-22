@@ -12,5 +12,6 @@ public class ForkJoinPoolExample {
         long result = forkJoinPool.invoke(factorialTask);
 
         System.out.println("Факториал " + n + "! = " + result);
+        //Факториал 10! = 3628800
     }
 }
