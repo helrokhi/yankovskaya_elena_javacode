@@ -12,6 +12,7 @@
         <module>task8_Stream_API_number_generation</module>
         <module>task9_Stream_API_gregation_and_unification</module>
         <module>task10_Stream_API_ForkJoinPool</module>
+        <module>task11_Maven_GeometryLibrary</module>
     </modules>
 
     <properties>
