@@ -3,17 +3,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>ru.pro</groupId>
-        <artifactId>javacode</artifactId>
+        <artifactId>GeometryLibrary</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>GeometryLibrary</artifactId>
-    <packaging>pom</packaging>
-
-    <name>task11_Maven_GeometryLibrary</name>
-    <modules>
-        <module>geometry-library</module>
-        <module>geometry-app</module>
-    </modules>
+    <artifactId>geometry-app</artifactId>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>ru.pro</groupId>
+            <artifactId>geometry-library</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
 
 </project>
