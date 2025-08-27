@@ -20,7 +20,7 @@ public class App {
     }
 
     private static void printShape(Shape shape) {
-        System.out.println("Фигура: " + shape.getClass().getSimpleName());
+        System.out.println("Фигура: " + shape.getDescription(shape));
         System.out.println("Площадь: " + shape.area());
         System.out.println("Периметр: " + shape.perimeter());
         System.out.println();
